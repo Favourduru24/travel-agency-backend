@@ -37,7 +37,6 @@ model Trip {
   interests        String
   groupType        String
   country          String
-  imageUrls        String[]
   bestTimeToVisit  String[]
   weatherInfo      String[]
   payment_link     String
@@ -48,6 +47,16 @@ model Trip {
   // 1:1 relation with Location (Trip owns the foreign key)
   locationId       Int?         @unique
   location         Location?    @relation(fields: [locationId], references: [id])
+
+  ImageUrlId        Int?         @unique
+  ImageUrl          ImageUrls     @relation(fields: [ImageUrlId], references: [id])
+}
+
+model ImageUrls {
+   id         Int        @id @default(autoincrement())
+   url         String[]
+   publicId            String[]
+   trip          Trip?
 }
 
 model DayPlan {

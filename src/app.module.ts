@@ -6,6 +6,7 @@ import { UserModule } from './user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { TripModule } from './trip/trip.module';
+import { FileUploadModule } from './file-upload/file-upload.module';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { TripModule } from './trip/trip.module';
     ConfigModule.forRoot({
     isGlobal: true
   }), 
-    PrismaModule, TripModule,
+    PrismaModule, TripModule
 
 ],
   controllers: [AppController],

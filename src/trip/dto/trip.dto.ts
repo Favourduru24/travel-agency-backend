@@ -15,7 +15,7 @@ export class TripDto {
    
   @IsEmpty()
   @IsEmpty()
-  interest: string
+  interests: string
    
   @IsEmpty()
   @IsEmpty()
