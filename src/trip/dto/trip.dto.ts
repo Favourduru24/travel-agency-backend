@@ -10,8 +10,8 @@ export class TripDto {
   travelStyle: string;
 
   @IsNotEmpty()
-  @IsString()
-  numberOfDays: string;
+  @IsNumber()
+  numberOfDays: number;
 
   @IsNotEmpty()
   @IsString()

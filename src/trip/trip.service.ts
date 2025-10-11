@@ -90,71 +90,95 @@ async createNewTrip(tripDto: TripDto) {
   const cloudinaryResults = await this.uploadFilesToCloudinary(imageUrls);
 
   // 4️⃣ Run all DB operations atomically
-  const result = await this.prisma.$transaction(async (tx) => {
-    // Location
-    const location = await tx.location.create({
-      data: {
-        city: data.location.city,
-        latitude: data.location.coordinates[0],
-        longitude: data.location.coordinates[1],
-        openStreetMap: data.location.openStreetMap,
-      },
-    });
+  const location = await this.prisma.location.create({
+  data: {
+    city: data.location.city,
+    latitude: data.location.coordinates[0],
+    longitude: data.location.coordinates[1],
+    openStreetMap: data.location.openStreetMap,
+  },
+});
 
-    // Trip
-    const trip = await tx.trip.create({
-      data: {
-        userId,
-        name: data.name,
-        description: data.description,
-        estimatedPrice: data.estimatedPrice,
-        payment_link: '',
-        duration: data.duration,
-        budget: data.budget,
-        travelStyle: data.travelStyle,
-        country: data.country,
-        interests: data.interests,
-        groupType: data.groupType,
-        bestTimeToVisit: data.bestTimeToVisit,
-        weatherInfo: data.weatherInfo,
-        locationId: location.id,
-        itinerary: {
-          create: data.itinerary.map((day) => ({
-            day: day.day,
-            location: day.location,
-            activities: {
-              create: day.activities.map((a) => ({
-                time: a.time,
-                description: a.description,
-              })),
-            },
+// 2️⃣ Create trip
+const trip = await this.prisma.trip.create({
+  data: {
+    userId,
+    name: data.name,
+    description: data.description,
+    estimatedPrice: data.estimatedPrice,
+    payment_link: '',
+    duration: data.duration,
+    budget: data.budget,
+    travelStyle: data.travelStyle,
+    country: data.country,
+    interests: data.interests,
+    groupType: data.groupType,
+    bestTimeToVisit: data.bestTimeToVisit,
+    weatherInfo: data.weatherInfo,
+    locationId: location.id,
+    itinerary: {
+      create: data.itinerary.map((day) => ({
+        day: day.day,
+        location: day.location,
+        activities: {
+          create: day.activities.map((a) => ({
+            time: a.time,
+            description: a.description,
           })),
         },
-      },
-      include: {
-        itinerary: { include: { activities: true } },
-        location: true,
-      },
-    });
-
-    // Images
-    await tx.imageUrl.createMany({
-      data: cloudinaryResults.map((res) => ({
-        publicId: res.public_id,
-        url: res.secure_url,
-        tripId: trip.id,
       })),
-    });
+    },
+  },
+  include: {
+    itinerary: { include: { activities: true } },
+    location: true,
+    images: true
+  },
+});
 
-    return trip;
-  });
+// 3️⃣ Create image URLs
+await this.prisma.imageUrl.createMany({
+  data: cloudinaryResults.map((res) => ({
+    publicId: res.public_id,
+    url: res.secure_url,
+    tripId: trip.id,
+  })),
+});
 
-  return result;
-  
+return trip;  
      } catch(error) {
        console.log('Something went wrong', error)
      }
    
+}
+
+async getUserTrips(userId: number) {
+  return this.prisma.trip.findMany({
+    where: { userId },
+    include: {
+      images: true, // ✅ include images from ImageUrl model
+      itinerary: {
+        include: {
+          activities: true,
+        },
+      },
+      location: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+async getTripById(id: number) {
+  return this.prisma.trip.findUnique({
+    where: { id },
+    include: {
+      images: true, // ✅ include ImageUrl[]
+      itinerary: {
+        include: { activities: true },
+      },
+      location: true,
+    },
+  });
 }
 
 private async uploadFilesToCloudinary(fileUrls: string[]) {
