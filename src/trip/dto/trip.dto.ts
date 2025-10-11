@@ -1,31 +1,30 @@
-import {IsEmpty, IsInt, } from 'class-validator'
+import { IsNotEmpty, IsString, IsNumber } from 'class-validator';
 
 export class TripDto {
-  @IsEmpty()
-  @IsEmpty()
-  country: string
-   
-  @IsEmpty()
-  @IsEmpty()
-  numberOfDays: string
-   
-  @IsEmpty()
-  @IsEmpty()
-  travelStyle: string
-   
-  @IsEmpty()
-  @IsEmpty()
-  interests: string
-   
-  @IsEmpty()
-  @IsEmpty()
-  budget: string
-   
-  @IsEmpty()
-  @IsEmpty()
-  groupType: string
+  @IsNotEmpty()
+  @IsString()
+  country: string;
 
-  @IsEmpty()
-  @IsInt()
-  userId: number
+  @IsNotEmpty()
+  @IsString()
+  travelStyle: string;
+
+  @IsNotEmpty()
+  @IsString()
+  numberOfDays: string;
+
+  @IsNotEmpty()
+  @IsString()
+  interests: string;
+
+  @IsNotEmpty()
+  @IsString()
+  budget: string;
+
+  @IsNotEmpty()
+  @IsString()
+  groupType: string;
+
+  @IsNotEmpty()
+  userId: number;
 }
