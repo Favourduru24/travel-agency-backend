@@ -17,17 +17,12 @@ export class TripService {
             })
   }
 
-   async createNewTrip (tripDto: TripDto) {
-      const {
-        country,
-        numberOfDays,
-        travelStyle,
-        interests,
-        budget,
-        groupType,
-        userId} = tripDto
-        
-      const response = await generateText({
+async createNewTrip(tripDto: TripDto) {
+  const { country, numberOfDays, travelStyle, interests, budget, groupType, userId } = tripDto;
+
+  // 1️⃣ Generate trip data with AI
+     try {
+       const response = await generateText({
                     model: google("gemini-2.0-flash-001"),
                    prompt: `Generate a ${numberOfDays}-day travel itinerary for ${country} based on the following user information:
                       Budget: '${budget}'
@@ -78,95 +73,119 @@ export class TripService {
      });
 
 
-        const data = this.parseMarkdownToJson<AITripResponse>(response.text);
-        if (!data) throw new Error('Invalid AI JSON format');
+  const data = this.parseMarkdownToJson<AITripResponse>(response.text);
+  if (!data) throw new Error("Invalid AI JSON format");
 
-        const imageResponse = await fetch(`https://api.unsplash.com/search/photo?query=${country} ${interests} ${travelStyle}&client_id=`)// ${unsplashApiKey}
+  // 2️⃣ Get Unsplash images
+  const unsplashRes = await fetch(
+    `https://api.unsplash.com/search/photos?query=${country} ${interests} ${travelStyle}&per_page=3&client_id=${process.env.UNSPLASH_ACCESS_KEY}`
+  );
+  const unsplashData = await unsplashRes.json();
+  const imageUrls = unsplashData.results?.map((img: any) => img.urls.regular) || [];
 
-        const imageUrls = (await imageResponse.json()).results.slice(0, 3).map((res: any) => res.urls?.regular || null)
+   
+  console.log("✅ Unsplash images fetched:", imageUrls.length);
 
-         const uploadResult = await this.uploadFileToCloudinary(imageUrls)
+  // 3️⃣ Upload images to Cloudinary
+  const cloudinaryResults = await this.uploadFilesToCloudinary(imageUrls);
 
+  // 4️⃣ Run all DB operations atomically
+  const result = await this.prisma.$transaction(async (tx) => {
+    // Location
+    const location = await tx.location.create({
+      data: {
+        city: data.location.city,
+        latitude: data.location.coordinates[0],
+        longitude: data.location.coordinates[1],
+        openStreetMap: data.location.openStreetMap,
+      },
+    });
 
-          const newImageUrl = await this.prisma.imageurls.create({
-                          data: {
-                             publicId: uploadResult.public_id,
-                             url: uploadResult.secure_url
-                          }
-                     })
+    // Trip
+    const trip = await tx.trip.create({
+      data: {
+        userId,
+        name: data.name,
+        description: data.description,
+        estimatedPrice: data.estimatedPrice,
+        payment_link: '',
+        duration: data.duration,
+        budget: data.budget,
+        travelStyle: data.travelStyle,
+        country: data.country,
+        interests: data.interests,
+        groupType: data.groupType,
+        bestTimeToVisit: data.bestTimeToVisit,
+        weatherInfo: data.weatherInfo,
+        locationId: location.id,
+        itinerary: {
+          create: data.itinerary.map((day) => ({
+            day: day.day,
+            location: day.location,
+            activities: {
+              create: day.activities.map((a) => ({
+                time: a.time,
+                description: a.description,
+              })),
+            },
+          })),
+        },
+      },
+      include: {
+        itinerary: { include: { activities: true } },
+        location: true,
+      },
+    });
 
-        const location = await this.prisma.location.create({
-           data: {
-             city: data.location.city,
-             latitude: data.location.coordinates[0],
-             longitude: data.location.coordinates[1],
-             openStreetMap: data.location.openStreetMap,
-           },
-          });
+    // Images
+    await tx.imageUrl.createMany({
+      data: cloudinaryResults.map((res) => ({
+        publicId: res.public_id,
+        url: res.secure_url,
+        tripId: trip.id,
+      })),
+    });
 
-          const trip = await this.prisma.trip.create({
-                  data: {
-                    userId,
-                    name: data.name,
-                    description: data.description,
-                    estimatedPrice: data.estimatedPrice,
-                    payment_link: '',
-                    duration: data.duration,
-                    budget: data.budget,
-                    travelStyle: data.travelStyle,
-                    country: data.country,
-                    interests: data.interests,
-                    groupType: data.groupType,
-                    bestTimeToVisit: data.bestTimeToVisit,
-                    weatherInfo: data.weatherInfo,
-                    locationId: location.id,
-                    ImageUrlId: newImageUrl.id,
-                    itinerary: {
-                      create: data.itinerary.map((day: any) => ({
-                        day: day.day,
-                        location: day.location,
-                        activities: {
-                          create: day.activities.map((activity: any) => ({
-                            time: activity.time,
-                            description: activity.description,
-                        })),
-                        },
-                      })),
-                    },
-                  },
-                  include: {
-                    itinerary: { include: { activities: true } },
-                    location: true,
-                  },
-                });
+    return trip;
+  });
 
-                return trip;
+  return result;
+  
+     } catch(error) {
+       console.log('Something went wrong', error)
+     }
+   
+}
 
-   }
+private async uploadFilesToCloudinary(fileUrls: string[]) {
+  try {
+    // Upload all images in parallel
+    const uploadPromises = fileUrls.map((fileUrl) =>
+      cloudinary.uploader.upload(fileUrl, {
+        folder: "trip_images", // optional folder organization in Cloudinary
+        transformation: [{ width: 1280, height: 720, crop: "limit" }], // optional resizing
+      })
+    );
 
-   private uploadFileToCloudinary(filePath: string[]) : Promise<any> {
-            return new Promise((resolve, reject) => {
-              cloudinary.uploader.upload(filePath, (error: any, result) => {
-               if(error) reject(error)
-               resolve(result)
-              })
-            })
-       }
+    const results = await Promise.all(uploadPromises);
+    return results; // returns an array of upload result objects (public_id, secure_url, etc.)
+  } catch (error) {
+    console.error("Error uploading to Cloudinary:", error);
+    throw new Error("Failed to upload images to Cloudinary");
+  }
+}
 
-        private parseMarkdownToJson<T>(markdownText: string): T | null {
-            const regex = /```json\n([\s\S]+?)\n```/;
-            const match = markdownText.match(regex);
+private parseMarkdownToJson<T>(markdownText: string): T | null {
+  const regex = /```json\n([\s\S]+?)\n```/;
+  const match = markdownText.match(regex);
+  
+  try {
+    const jsonText = match ? match[1] : markdownText; // fallback if no ```json``` block
+    return JSON.parse(jsonText);
+  } catch (error) {
+    console.error("Error parsing JSON:", error);
+    return null;
+  }
+}
           
-            if (match && match[1]) {
-              try {
-                return JSON.parse(match[1]);
-              } catch (error) {
-                console.error("Error parsing JSON:", error);
-                return null;
-              }
-            }
-            console.error("No valid JSON found in markdown text.");
-            return null;
-          }
-
     }

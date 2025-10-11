@@ -24,6 +24,14 @@ model User {
   trips     Trip[]
 }
 
+model ImageUrl {
+  id        Int    @id @default(autoincrement())
+  url       String
+  publicId  String
+  tripId    Int
+  trip      Trip   @relation(fields: [tripId], references: [id])
+}
+
 model Trip {
   id               Int          @id @default(autoincrement())
   userId           Int
@@ -42,21 +50,12 @@ model Trip {
   payment_link     String
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
-  itinerary        DayPlan[]
 
-  // 1:1 relation with Location (Trip owns the foreign key)
   locationId       Int?         @unique
   location         Location?    @relation(fields: [locationId], references: [id])
 
-  ImageUrlId        Int?         @unique
-  ImageUrl          ImageUrls     @relation(fields: [ImageUrlId], references: [id])
-}
-
-model ImageUrls {
-   id         Int        @id @default(autoincrement())
-   url         String[]
-   publicId            String[]
-   trip          Trip?
+  images           ImageUrl[]   // 👈 one-to-many relation to images
+  itinerary        DayPlan[]
 }
 
 model DayPlan {
