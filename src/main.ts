@@ -7,12 +7,7 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe())
-  // const uploadDirectory = path.join(__dirname, "..", "upload")
-
-  //  if(!fs.existsSync(uploadDirectory)) {
-  //   fs.mkdirSync(uploadDirectory)
-  //  } 
-
+  
   app.enableCors({
     origin: 'http://localhost:3000', // Allow all origins (not safe for production)
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
@@ -22,4 +17,3 @@ async function bootstrap() {
 }
 bootstrap();
 
-//npm i --save @types/multer 
