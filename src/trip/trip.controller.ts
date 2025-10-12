@@ -8,24 +8,26 @@ export class TripController {
     constructor(
          private readonly tripService: TripService
     ) {}
-    @Get()
-    getTrip() {
-
-    }
-
     @Post('/create-trip')
      async createTrip(@Body() tripDto: TripDto) {
        return this.tripService.createNewTrip(tripDto)
      }
 
-  @Get('my-trips/:userId')
-  async getUserTrips(@Param('userId') userId: string) {
-    return this.tripService.getUserTrips(Number(userId));
-  }
+      @Get('all-trip')
+      async getAllTrip() {
+        return this.tripService.getAllTrips()
+      } 
 
-  // ✅ Get one trip by ID
-  @Get(':id')
-  async getTripById(@Param('id') id: string) {
-    return this.tripService.getTripById(Number(id));
-  }
+      @Get('my-trips/:userId')
+      async getUserTrips(@Param('userId') userId: string) {
+        return this.tripService.getUserTrips(Number(userId));
+      }
+
+    
+      @Get(':id')
+      async getTripById(@Param('id') id: string) {
+        return this.tripService.getTripById(Number(id));
+      }
+
+ 
 }

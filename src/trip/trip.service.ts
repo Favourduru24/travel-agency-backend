@@ -181,6 +181,21 @@ async getTripById(id: number) {
   });
 }
 
+async getAllTrips() {
+  return this.prisma.trip.findMany({
+    include: {
+      images: true,
+      itinerary: {
+        include: {
+          activities: true,
+        },
+      },
+      location: true,
+    },
+    orderBy: {createdAt: 'desc'}
+  });
+}
+
 private async uploadFilesToCloudinary(fileUrls: string[]) {
   try {
     // Upload all images in parallel
