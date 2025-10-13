@@ -172,7 +172,7 @@ async getTripById(id: number) {
   return this.prisma.trip.findUnique({
     where: { id },
     include: {
-      images: true, // ✅ include ImageUrl[]
+      images: true,  
       itinerary: {
         include: { activities: true },
       },
