@@ -49,7 +49,7 @@ async login(loginDto: LoginDto) {
     throw new UnauthorizedException('Invalid credentials. Please try again.');
   }
 
-  const payload = { sub: foundUser.id, email: foundUser.email, username: foundUser.username, profileUrl: foundUser.profileUrl};
+  const payload = { sub: foundUser.id, email: foundUser.email, username: foundUser.username, profileUrl: foundUser.profileUrl,}; // role: foundUser.role
   const token = this.jwtService.sign(payload);
 
   return {

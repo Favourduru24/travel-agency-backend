@@ -19,9 +19,16 @@ model User {
   email     String @unique
   username  String
   profileUrl String
+  role       Role      @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   trips     Trip[]
+}
+
+enum Role {
+  ADMIN
+  AGENT
+  USER
 }
 
 model ImageUrl {
