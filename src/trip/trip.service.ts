@@ -84,8 +84,6 @@ async createNewTrip(tripDto: TripDto) {
   const imageUrls = unsplashData.results?.map((img: any) => img.urls.regular) || [];
 
    
-  console.log("✅ Unsplash images fetched:", imageUrls.length);
-
   // 3️⃣ Upload images to Cloudinary
   const cloudinaryResults = await this.uploadFilesToCloudinary(imageUrls);
 
@@ -147,26 +145,60 @@ await this.prisma.imageUrl.createMany({
 
 return trip;  
      } catch(error) {
-       console.log('Something went wrong', error)
+       console.error('Something went wrong', error)
      }
    
 }
 
-async getUserTrips(userId: number) {
-  return this.prisma.trip.findMany({
-    where: { userId },
-    include: {
-      images: true, // ✅ include images from ImageUrl model
-      itinerary: {
-        include: {
-          activities: true,
+// async getUserTrips(userId: number) {
+//   return this.prisma.trip.findMany({
+//     where: { userId },
+//     include: {
+//       images: true, // ✅ include images from ImageUrl model
+//       itinerary: {
+//         include: {
+//           activities: true,
+//         },
+//       },
+//       location: true,
+//     },
+//     orderBy: { createdAt: 'desc' },
+//   });
+// }
+
+async getUserTrips(userId: number, page = 1, limit = 10) {
+  const skip = (page - 1) * limit; 
+
+  const [trips, total] = await this.prisma.$transaction([
+    this.prisma.trip.findMany({
+      where: { userId },
+      include: {
+        images: true,
+        itinerary: {
+          include: { activities: true },
         },
+        location: true,
       },
-      location: true,
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    }),
+    this.prisma.trip.count({
+      where: { userId: Number(userId) },
+    }),
+  ]);
+
+  return {
+    data: trips,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     },
-    orderBy: { createdAt: 'desc' },
-  });
+  };
 }
+
 
 async getTripById(id: number) {
   return this.prisma.trip.findUnique({
@@ -181,19 +213,37 @@ async getTripById(id: number) {
   });
 }
 
-async getAllTrips() {
-  return this.prisma.trip.findMany({
-    include: {
-      images: true,
-      itinerary: {
-        include: {
-          activities: true,
-        },
-      },
-      location: true,
-    },
-    orderBy: {createdAt: 'desc'}
-  });
+async getAllTrips(page = 1, limit = 1) {
+
+   const skip = (page - 1) * limit
+
+   const [trip, total] = await this.prisma.$transaction([
+     this.prisma.trip.findMany({
+       include: {
+         images: true,
+         itinerary: {
+             include: {
+              activities: true
+             }
+         },
+         location: true
+       },
+       orderBy: {id: 'asc'},
+       take: limit,
+       skip
+     }),
+      this.prisma.trip.count()
+   ])
+
+   return {
+    data: trip,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPage: Math.ceil(total / limit)
+    }
+   }
 }
 
 private async uploadFilesToCloudinary(fileUrls: string[]) {

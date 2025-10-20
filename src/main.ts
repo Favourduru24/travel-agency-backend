@@ -12,9 +12,7 @@ async function bootstrap() {
     origin: 'http://localhost:3000',  
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true, // Only set true if you need cookies or auth headers
-  });
+  })
   await app.listen(process.env.PORT ?? 4000)
 }
-bootstrap();
-
-
+bootstrap()

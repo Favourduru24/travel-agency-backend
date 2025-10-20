@@ -1,19 +1,26 @@
 import { Injectable } from '@nestjs/common';
+import { UserRole } from 'src/auth/dto/register.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
  
-   export interface DashboardStats {
-    totalUsers: number;
-    usersJoined: {
-        currentMonth: number;
-        lastMonth: number;
-    };
-    totalTrips: number;
-    tripsCreated: {
-        currentMonth: number;
-        lastMonth: number;
-    };
-    tripsByTravelStyle: { travelStyle: string; count: number }[];
-    }
+  export interface DashboardStats {
+  totalUsers: number;
+  usersJoined: {
+    currentMonth: number;
+    lastMonth: number;
+  };
+  userRole: {
+    total: number;
+    currentMonth: number;
+    lastMonth: number;
+  };
+  totalTrips: number;
+  tripsCreated: {
+    currentMonth: number;
+    lastMonth: number;
+  };
+  tripsByTravelStyle: { travelStyle: string; count: number }[];
+}
+
 
 @Injectable()
 export class DashboardService {
@@ -30,7 +37,17 @@ export class DashboardService {
       const { start: startCurrent } = this.getMonthDateRange(0);
       const { start: startPrev, end: endPrev } = this.getMonthDateRange(-1);
   
-      const [totalUsers, totalTrips, currentMonthUsers, lastMonthUsers, currentMonthTrips, lastMonthTrips] =
+      const [
+        totalUsers,
+        totalTrips,
+        currentMonthUsers,
+        lastMonthUsers,
+        currentMonthTrips,
+        lastMonthTrips,
+        totalUsersWithRoleUser, 
+        currentMonthUsersWithRoleUser,
+        lastMonthUsersWithRoleUser,
+      ] =
         await Promise.all([
           this.prisma.user.count(),
           this.prisma.trip.count(),
@@ -53,6 +70,17 @@ export class DashboardService {
             where: {
               createdAt: { gte: startPrev, lte: endPrev },
             },
+          }),
+          this.prisma.user.count({
+            where: { role: UserRole.USER },
+          }),
+          // users with role USER this month
+          this.prisma.user.count({
+            where: { role: UserRole.USER, createdAt: { gte: startCurrent } },
+          }),
+          // users with role USER last month
+          this.prisma.user.count({
+            where: { role: UserRole.USER, createdAt: { gte: startPrev, lte: endPrev } },
           }),
         ]);
   
@@ -77,6 +105,11 @@ export class DashboardService {
           currentMonth: currentMonthTrips,
           lastMonth: lastMonthTrips,
         },
+        userRole: {
+        total: totalUsersWithRoleUser,
+        currentMonth: currentMonthUsersWithRoleUser,
+        lastMonth: lastMonthUsersWithRoleUser,
+      },
         tripsByTravelStyle,
       };
     }

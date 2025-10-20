@@ -49,7 +49,7 @@ async login(loginDto: LoginDto) {
     throw new UnauthorizedException('Invalid credentials. Please try again.');
   }
 
-  const payload = { sub: foundUser.id, email: foundUser.email, username: foundUser.username, profileUrl: foundUser.profileUrl,}; // role: foundUser.role
+  const payload = { sub: foundUser.id, email: foundUser.email, username: foundUser.username, profileUrl: foundUser.profileUrl, role: foundUser.role}; // 
   const token = this.jwtService.sign(payload);
 
   return {
@@ -70,7 +70,7 @@ async login(loginDto: LoginDto) {
     if(user) return user
 
       const newUser = await this.prisma.user.create({
-        data: {email, username, profileUrl
+        data: {email, username, profileUrl, role: 'USER'
         }})
 
         return newUser

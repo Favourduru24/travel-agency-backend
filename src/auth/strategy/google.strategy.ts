@@ -4,6 +4,7 @@ import { Strategy, VerifyCallback, StrategyOptions } from 'passport-google-oauth
 import googleOauthConfig from '../config/google.oauth.config';
 import type { ConfigType } from '@nestjs/config';
 import { AuthService } from '../auth.service';
+import { UserRole } from '../dto/register.dto';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {

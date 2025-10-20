@@ -5,7 +5,7 @@ import { GoogleAuthGuard } from './guards/google-auth/google-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { JWTAuthGuard} from './jwt.auth.guard';
 
-@Controller('auth')
+@Controller('choose-role/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -30,7 +30,7 @@ export class AuthController {
   async googleCallback(@Req() req, @Res() res) {
     const user = req.user;
     const response = await this.authService.login({ email: user.email });
-    res.redirect(`http://localhost:3000?token=${response.token}`);
+    res.redirect(`http://localhost:3000/choose-role?token=${response.token}`);
   }
 
   @UseGuards(JWTAuthGuard)
