@@ -30,7 +30,7 @@ export class AuthController {
   async googleCallback(@Req() req, @Res() res) {
     const user = req.user;
     const response = await this.authService.login({ email: user.email });
-    res.redirect(`http://localhost:3000/choose-role?token=${response.token}`);
+    res.redirect(`https://travisto-u4ac.vercel.app/choose-role?token=${response.token}`);
   }
 
   @UseGuards(JWTAuthGuard)
