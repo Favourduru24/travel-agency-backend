@@ -9,7 +9,7 @@ async function bootstrap() {
    
 
   app.enableCors({
-    origin: 'http://localhost:3000',  
+    origin: 'https://travisto-u4ac.vercel.app',  
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true, // Only set true if you need cookies or auth headers
   })
