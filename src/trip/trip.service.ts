@@ -150,22 +150,6 @@ return trip;
    
 }
 
-// async getUserTrips(userId: number) {
-//   return this.prisma.trip.findMany({
-//     where: { userId },
-//     include: {
-//       images: true, // ✅ include images from ImageUrl model
-//       itinerary: {
-//         include: {
-//           activities: true,
-//         },
-//       },
-//       location: true,
-//     },
-//     orderBy: { createdAt: 'desc' },
-//   });
-// }
-
 async getUserTrips(userId: number, page = 1, limit = 10) {
   const skip = (page - 1) * limit; 
 
@@ -228,7 +212,7 @@ async getAllTrips(page = 1, limit = 1) {
          },
          location: true
        },
-       orderBy: {id: 'asc'},
+       orderBy: { createdAt: 'desc' },
        take: limit,
        skip
      }),
